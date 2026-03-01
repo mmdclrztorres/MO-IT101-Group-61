@@ -355,8 +355,8 @@ public class MotorPH_Payroll_System_Group61 {
     public static void main(String[] args) {
         
         //Initializing Variables for Reader/s:
-        String empInfo = "MotorPH_Employee_Information.csv";
-        String attendanceInfo = "MotorPH_Attendance_Record.csv";
+        String empInfo = "resources/MotorPH_Employee_Information.csv";
+        String attendanceInfo = "resources/MotorPH_Attendance_Record.csv";
         
         //Initializing Variables for Employee Information Display:
         String employeeID = "";
