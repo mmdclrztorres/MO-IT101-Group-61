@@ -86,25 +86,9 @@ public class MotorPH_Payroll_System_Group61 {
             return 0; // Return 0 for invalid time formats or missing logs.
         }
     }
-    // Method 3: To Fetch the Semi Monthly Rate from Employee Info. File.
-    public static double getSemiMonthlyRate(String filePath, String id) {
-    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-        reader.readLine(); 
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-            if (data[0].equals(id)) {
-                // Index 17 is the Semi-monthly Rate column
-                return Double.parseDouble(data[17].replace("\"", "").replace(",", "").trim());
-            }
-        }
-    } catch (Exception e) {
-        return 0;
-    }
-    return 0;
-}
+   
     
-    //Method 4: To Fetch the Hourly Rate from the Employee Info. File.
+    //Method 3: To Fetch the Hourly Rate from the Employee Info. File.
     public static double getHourlyRate(String filePath, String id) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             br.readLine(); // Skips header
@@ -123,7 +107,7 @@ public class MotorPH_Payroll_System_Group61 {
             return 0;
     }
     /* Government Deduction Methods:
-    Method 5: SSS Deduction: */
+    Method 4: SSS Deduction: */
     public static double computeSSS(double grossMonthlySalary){
         
         double sssContribution = 0;
@@ -222,7 +206,7 @@ public class MotorPH_Payroll_System_Group61 {
         return sssContribution;
     }
     
-    //Method 6: Philhealth Deduction
+    //Method 5: Philhealth Deduction:
     public static double computePhilHealth(double grossMonthlySalary) {
         
         double philHealthPremium;
@@ -237,7 +221,7 @@ public class MotorPH_Payroll_System_Group61 {
         return philHealthPremium;
     }
     
-    //Method 7: Pag-Ibig Deduction:
+    //Method 6: Pag-Ibig Deduction:
     public static double computePagIbig(double grossMonthlySalary) {
         
         double pagIbigContribution = 0;
@@ -253,7 +237,7 @@ public class MotorPH_Payroll_System_Group61 {
         return pagIbigContribution;
     } 
     
-    //Method 8: Income Tax/WHT Deduction:
+    //Method 7: Income Tax/WHT Deduction:
     public static double computeIncomeTax(double grossMonthlySalary){
         
         double taxableIncomeDeductions = computeSSS(grossMonthlySalary) + 
@@ -282,7 +266,7 @@ public class MotorPH_Payroll_System_Group61 {
         return Math.max(0, incomeTax);
     }
     
-    //Method 9: Computing all GOVT Deductions:
+    //Method 8: Computing all GOVT Deductions:
     public static double computeTotalGovtDeductions(double grossMonthlySalary) {
         double sss = computeSSS(grossMonthlySalary);
         double philHealth = computePhilHealth(grossMonthlySalary);
@@ -292,15 +276,15 @@ public class MotorPH_Payroll_System_Group61 {
         return sss + philHealth + pagIbig + tax;
     }
     
-    //Method 10: Monthly Net Pay Computation:
+    //Method 9: Monthly Net Pay Computation:
     public static double computeNetPay(double grossMonthlySalary){
         
         double netPay = grossMonthlySalary - computeTotalGovtDeductions(grossMonthlySalary);
         
         return netPay;
     }
-    //Method 11: Displaying Payroll Results in Prescribed Format (as per payroll flow)
-    public static void displayPayrollResults(int month, String id, double rate, double semiMonthlyRate, double h1, double h2) {
+    //Method 10: Displaying Payroll Results in Prescribed Format (as per payroll flow)
+    public static void displayPayrollResults(int month, String id, double rate, double h1, double h2) {
         
         String monthName = switch (month) {
             case 6 -> "JUNE"; 
@@ -312,10 +296,10 @@ public class MotorPH_Payroll_System_Group61 {
             case 12 -> "DECEMBER";
             default -> "";
         };
-        double gross1 = semiMonthlyRate;
+        
         double netSalary1 = h1 * rate;
         
-        double netSalary2 = h2* rate;
+        double netSalary2 = h2 * rate;
                
         double totalMonthlyGross = netSalary1 + netSalary2;
     
@@ -332,7 +316,7 @@ public class MotorPH_Payroll_System_Group61 {
             System.out.println("==========================================");
             System.out.println("CUTOFF 1: " + monthName + " 1 to " + monthName + " 15");
             System.out.println("Total Hours Worked   : " + h1 + " hrs");
-            System.out.println("Gross Salary         : " + "PHP " + gross1);
+            System.out.println("Gross Salary         : " + "PHP " + netSalary1);
             System.out.println("Net Salary           : " + "PHP " + netSalary1);
             System.out.println("------------------------------------------");
             System.out.println("CUTOFF 2: " + monthName + " 16 to END OF MONTH.");
@@ -353,6 +337,14 @@ public class MotorPH_Payroll_System_Group61 {
     }
     
     public static void main(String[] args) {
+        
+        /* UNIT TESTING
+        System.out.println("=== MOTORPH SYSTEM DIAGNOSTICS ===");
+        testAttendanceLogic();
+        testDeductionTables();
+        testTaxBrackets();
+        System.out.println("==================================\n");
+        */
         
         //Initializing Variables for Reader/s:
         String empInfo = "resources/MotorPH_Employee_Information.csv";
@@ -432,8 +424,7 @@ public class MotorPH_Payroll_System_Group61 {
                             findAndDisplayEmpInfo(empInfo, inputEmployeeID);
                             
                             double hourlyRate = getHourlyRate(empInfo, inputEmployeeID);
-                            double semiMonthlyRate = getSemiMonthlyRate(empInfo, inputEmployeeID); 
-                            
+                                                        
                             //Calculation for Separating Cutoff1 & 2Hours.
                             if (hourlyRate > 0){
                                 for (int m = 6; m <= 12; m++) {
@@ -462,7 +453,7 @@ public class MotorPH_Payroll_System_Group61 {
                                                 }
                                             }
                                         }
-                                        displayPayrollResults(m, inputEmployeeID, hourlyRate, semiMonthlyRate, cutoff1Hours, cutoff2Hours);
+                                        displayPayrollResults(m, inputEmployeeID, hourlyRate, cutoff1Hours, cutoff2Hours);
                                     
                                     } catch (IOException e) {
                                         System.out.println("Error accessing attendance records for month " + m);
@@ -489,8 +480,7 @@ public class MotorPH_Payroll_System_Group61 {
                                     lastName = empData[1];
                                     birthday = empData[3];
                                     double hourlyRate = Double.parseDouble(empData[18].replace("\"", "").replace(",", "").trim());
-                                    double semiMonthlyRate = Double.parseDouble(empData[17].replace("\"", "").replace(",", "").trim());
-                                    
+                                                                        
                                         //Added this header to match the "One Employee" Payroll Format.
                                         System.out.println("\n******************************************");
                                         System.out.println("---Employee Information---");
@@ -527,7 +517,7 @@ public class MotorPH_Payroll_System_Group61 {
                                         }
                                         }
                                     // Recalling the Method that Prints Payroll Information:
-                                    displayPayrollResults(m, employeeID, hourlyRate,semiMonthlyRate, cutoff1Hours, cutoff2Hours);
+                                    displayPayrollResults(m, employeeID, hourlyRate, cutoff1Hours, cutoff2Hours);
 
                                     } catch (IOException e) {
                                         System.out.println("Error reading attendance for ID: " + employeeID);
@@ -563,5 +553,52 @@ public class MotorPH_Payroll_System_Group61 {
         }    
     keyboard.close();
     }       
-       
+    
+    public static void testAttendanceLogic() { //Test Method 1 for Attendance Logic.
+    System.out.println("--- Testing Attendance Logic ---");
+
+        // Test A: Exact 8:00 to 17:00 (8 hours work + 1 hour lunch)
+        double caseA = calculateDailyHours("8:00", "17:00");
+        System.out.println("8:00-17:00: " + (caseA == 8.0 ? "PASS" : "FAIL (Got " + caseA + ")"));
+
+        // Test B: Grace Period (8:09 to 17:00 should still be 8 hours)
+        double caseB = calculateDailyHours("8:09", "17:00");
+        System.out.println("8:09-17:00: " + (caseB == 8.0 ? "PASS" : "FAIL"));
+
+        // Test C: Late (8:11 to 17:00 should be 7.82 hours approx)
+        // (17:00 - 8:11) = 8h 49m = 529 mins. 529 - 60 (lunch) = 469 mins. 469/60 = 7.816
+        double caseC = calculateDailyHours("8:11", "17:00");
+        System.out.println("8:11-17:00: " + (caseC > 7.81 && caseC < 7.82 ? "PASS" : "FAIL"));
+    }
+    public static void testDeductionTables() { //Test Method 2 for Deduction Tables.
+    System.out.println("\n--- Testing Deduction Tables ---");
+
+        double sampleSalary = 25000.00;
+
+        // SSS Test: At 25k, the contribution should be 1125.00
+        double sss = computeSSS(sampleSalary);
+        System.out.println("SSS @ 25k: " + (sss == 1125.0 ? "PASS" : "FAIL (Got " + sss + ")"));
+
+        // PhilHealth Test: 25k * 0.03 / 2 = 375.00
+        double ph = computePhilHealth(sampleSalary);
+        System.out.println("PhilHealth @ 25k: " + (ph == 375.0 ? "PASS" : "FAIL (Got " + ph + ")"));
+
+        // Pag-IBIG Test: Should be capped at 100.00
+        double pi = computePagIbig(sampleSalary);
+        System.out.println("Pag-IBIG @ 25k: " + (pi == 100.0 ? "PASS" : "FAIL"));
+    }
+    
+    public static void testTaxBrackets() { //Test Method 3 for Tax Brackets (IncomeTax)
+        System.out.println("\n--- Testing Tax Brackets ---");
+
+        // Case 1: Low Income (Below 20,832 - should be 0 tax)
+        double tax1 = computeIncomeTax(20000.00);
+        System.out.println("Tax @ 20k Gross: " + (tax1 == 0 ? "PASS" : "FAIL"));
+
+        // Case 2: Middle Income (e.g., 30,000 Gross)
+        // Est. Taxable: 30,000 - ~1600 (statutory) = ~28,400
+        // Tax: (28,400 - 20,833) * 0.20 = ~1,513
+        double tax2 = computeIncomeTax(30000.00);
+        System.out.println("Tax @ 30k Gross: " + (tax2 > 0 ? "PASS (Calculated: " + tax2 + ")" : "FAIL"));
+    }
 }
