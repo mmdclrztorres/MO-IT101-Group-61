@@ -554,6 +554,7 @@ public class MotorPH_Payroll_System_Group61 {
     keyboard.close();
     }       
     
+    //Unit Testing Methods to Test Specific Logics of My Code:
     public static void testAttendanceLogic() { //Test Method 1 for Attendance Logic.
     System.out.println("--- Testing Attendance Logic ---");
 
