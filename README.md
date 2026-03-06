@@ -46,5 +46,5 @@ The program requires the following files to be located in the resources director
 
 4. Project Plan:
 
-To Access my revised project plan, please use the link below:
+To Access my revised project plan, please use the link:
     https://docs.google.com/spreadsheets/d/1fPTG4bzm688KDI2mqLmHbmYak2F_Fi-pk1GwUM_Muq8/edit?usp=sharing
