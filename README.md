@@ -43,3 +43,8 @@ The program requires the following files to be located in the resources director
 
   MotorPH_Employee_Information.csv: Contains employee ID, names, birthdays, and salary rates.
   MotorPH_Attendance_Record.csv: Contains the logs for Time In and Time Out. 
+
+4. Project Plan:
+
+To Access my revised project plan, please use the link below:
+    https://docs.google.com/spreadsheets/d/1fPTG4bzm688KDI2mqLmHbmYak2F_Fi-pk1GwUM_Muq8/edit?usp=sharing
