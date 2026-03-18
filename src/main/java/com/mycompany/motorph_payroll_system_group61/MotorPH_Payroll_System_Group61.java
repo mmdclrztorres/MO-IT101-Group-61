@@ -237,19 +237,19 @@ public class MotorPH_Payroll_System_Group61 {
         return pagIbigContribution;
     } 
     
-    //Method 7: Income Tax/WHT Deduction:
+    //Method 7: Income Tax/WHT Deduction: 
     public static double computeIncomeTax(double grossMonthlySalary){
         
+        double incomeTax;
         double taxableIncomeDeductions = computeSSS(grossMonthlySalary) + 
                                      computePhilHealth(grossMonthlySalary) + 
                                      computePagIbig(grossMonthlySalary);
     
         double taxableIncome = grossMonthlySalary - taxableIncomeDeductions;
-        double incomeTax = 0;     
+             
     
         if(taxableIncome <= 20832){
-            incomeTax = 0;
-            
+            incomeTax = 0;    
         } else if(taxableIncome < 33333){
         incomeTax = (taxableIncome - 20833) * 0.2; 
         } else if (taxableIncome < 66667) {
@@ -263,7 +263,7 @@ public class MotorPH_Payroll_System_Group61 {
         }    
     
         // Returns the result (ensuring no tiny negative floating point errors)
-        return Math.max(0, incomeTax);
+        return incomeTax;
     }
     
     //Method 8: Computing all GOVT Deductions:
@@ -335,20 +335,187 @@ public class MotorPH_Payroll_System_Group61 {
             System.out.println("NET MONTHLY SALARY    : PHP " + netPay);
             System.out.println("==========================================");
     }
+    // Method 11: All Employees Loop (New Addition based on feedback 1)
+    public static void processAllEmployees(String empPath, java.util.List<String[]> attendanceList) {
+        try (BufferedReader br = new BufferedReader(new FileReader(empPath))) {
+            br.readLine(); // Skip CSV header
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                // Split data handling potential commas in quotes
+                String[] data = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                String id = data[0];
+                String lastName = data[1];
+                String firstName = data[2];
+                String birthday = data[3];
+                double rate = Double.parseDouble(data[18].replace("\"", "").replace(",", "").trim());
+
+                // --- RESTORED HEADER ---
+                System.out.println("\n******************************************");
+                System.out.println("---Employee Information---");
+                System.out.println("Employee #      : " + id);
+                System.out.println("Employee Name   : " + lastName + ", " + firstName);
+                System.out.println("Birthday        : " + birthday);
+                System.out.println("--------------------------");
+
+                // Process June to December for this specific employee
+                for (int m = 6; m <= 12; m++) {
+                    double h1 = 0, h2 = 0;
+                    for (String[] att : attendanceList) {
+                        if (att[0].equals(id)) {
+                            String[] dParts = att[3].split("/");
+                            if (Integer.parseInt(dParts[0]) == m) {
+                                double hrs = calculateDailyHours(att[4], att[5]);
+                                if (Integer.parseInt(dParts[1]) <= 15) h1 += hrs; else h2 += hrs;
+                            }
+                        }
+                    }
+                    displayPayrollResults(m, id, rate, h1, h2);
+                }
+
+                // --- RESTORED FOOTER ---
+                System.out.println(">>> COMPLETED ALL MONTHS FOR: " + lastName);
+                System.out.println("******************************************\n");
+            }
+        } catch (IOException e) { 
+            System.out.println("Error reading employee information file."); 
+        }
+    }
+
+    // Method 12: Loading Attendance into Array (New Addition based on feedback 2)
+    public static java.util.List<String[]> loadAttendance(String path) {
+        java.util.List<String[]> list = new java.util.ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+            br.readLine(); 
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty()) list.add(line.split(","));
+            }
+        } catch (IOException e) { System.out.println("Error loading attendance."); }
+        return list;
+    }
+    
+    //Unit Testing Methods to Test Specific Logics of the Code: (For my own purposes*)
+    public static void testAttendanceLogic() { //Test Method 1 for Attendance Logic.
+    System.out.println("\n--- Testing Attendance Logic ---");
+
+        // Test A: Exact 8:00 to 17:00 (8 hours work + 1 hour lunch)
+        double caseA = calculateDailyHours("8:00", "17:00");
+        System.out.println("8:00-17:00: " + (caseA == 8.0 ? "[PASS]" : "[FAIL] (Got " + caseA + ")"));
+
+        // Test B: Grace Period (8:09 to 17:00 should still be 8 hours)
+        double caseB = calculateDailyHours("8:09", "17:00");
+        System.out.println("8:09-17:00: " + (caseB == 8.0 ? "[PASS]" : "[FAIL]"));
+
+        // Test C: Late (8:11 to 17:00 should be 7.82 hours approx)
+        // (17:00 - 8:11) = 8h 49m = 529 mins. 529 - 60 (lunch) = 469 mins. 469/60 = 7.816
+        double caseC = calculateDailyHours("8:11", "17:00");
+        System.out.println("8:11-17:00: " + (caseC > 7.81 && caseC < 7.82 ? "[PASS]" : "[FAIL]"));
+    }
+    public static void testDeductionTables() { //Test Method 2 for Deduction Tables.
+    System.out.println("\n--- Testing Deduction Tables ---");
+
+        double sampleSalary = 25000.00;
+
+        // SSS Test: At 25k, the contribution should be 1125.00
+        double sss = computeSSS(sampleSalary);
+        System.out.println("SSS @ 25k: " + (sss == 1125.0 ? "[PASS]" : "[FAIL] (Got " + sss + ")"));
+
+        // PhilHealth Test: 25k * 0.03 / 2 = 375.00
+        double ph = computePhilHealth(sampleSalary);
+        System.out.println("PhilHealth @ 25k: " + (ph == 375.0 ? "[PASS]" : "[FAIL] (Got " + ph + ")"));
+
+        // Pag-IBIG Test: Should be capped at 100.00
+        double pi = computePagIbig(sampleSalary);
+        System.out.println("Pag-IBIG @ 25k: " + (pi == 100.0 ? "[PASS]" : "[FAIL]"));
+    }
+    
+    public static void testTaxBrackets() { //Test Method 3 for Tax Brackets (IncomeTax)
+        System.out.println("\n--- Testing Tax Brackets ---");
+
+        // Case 1: Low Income (Below 20,832 - should be 0 tax)
+        double tax1 = computeIncomeTax(20000.00);
+        System.out.println("Tax @ 20k Gross: " + (tax1 == 0 ? "[PASS]" : "[FAIL]"));
+
+        // Case 2: Middle Income (e.g., 30,000 Gross)
+        // Est. Taxable: 30,000 - ~1600 (statutory) = ~28,400
+        // Tax: (28,400 - 20,833) * 0.20 = ~1,513
+        double tax2 = computeIncomeTax(30000.00);
+        System.out.println("Tax @ 30k Gross: " + (tax2 > 0 ? "[PASS] (Calculated: " + tax2 + ")" : "[FAIL]"));
+    }
+    
+    public static void testFullMonthlyNetPay() { //Test Method 4 for Calculating Full Monthly Pay (with govt. deductions):
+        System.out.println("\n--- Testing Full Monthly Net Pay @ (30k) ---");
+
+        double gross = 30000.00;
+
+        // Calculate each piece using existing deduction methods
+        double sss = computeSSS(gross);
+        double ph = computePhilHealth(gross);
+        double pi = computePagIbig(gross);
+        double tax = computeIncomeTax(gross); 
+
+        double totalDeductions = sss + ph + pi + tax;
+        double actualNet = gross - totalDeductions;
+
+        // 25,000 - (1,125 + 375 + 100 + 513.4) = 22,886.6
+        double expectedNet = 26826.6; 
+
+        System.out.println("Results for 25,000 PHP Gross:");
+        System.out.println("SSS: " + sss + " | PhilHealth: " + ph + " | Pag-IBIG: " + pi + " | Tax: " + tax);
+        System.out.println("Final Net: " + actualNet);
+        
+        if (Math.abs(actualNet - expectedNet) < 0.10) {
+            System.out.println("[PASS]");
+        } else {
+            System.out.println("[FAIL] Difference detected. Check your deduction brackets.");
+        }
+    }
+    
+    public static void testHighSalaryNetPay() { //Test Method 5 for Calculating High Salary Full Monthly Pay (with govt. deductions):
+        System.out.println("\n--- Testing High Salary Net Pay @ (50k) ---");
+        double gross = 50000.00;
+
+        double sss = computeSSS(gross);
+        double ph = computePhilHealth(gross);
+        double pi = computePagIbig(gross);
+        double tax = computeIncomeTax(gross);
+
+        double actualNet = gross - (sss + ph + pi + tax);
+        double expectedNet = 41852.00; // Target for 50k gross
+
+        System.out.println("Results for 50,000 PHP Gross:");
+        System.out.println("SSS: " + sss + " | PH: " + ph + " | PI: " + pi + " | Tax: " + tax);
+        System.out.println("Final Net: " + actualNet);
+
+        if (Math.abs(actualNet - expectedNet) < 0.10) {
+            System.out.println("[PASS]");
+        } else {
+            System.out.println("[FAIL] Check your 25% tax bracket logic.");
+        }
+    }
     
     public static void main(String[] args) {
         
-        /* UNIT TESTING
+        /**
         System.out.println("=== MOTORPH SYSTEM DIAGNOSTICS ===");
         testAttendanceLogic();
         testDeductionTables();
         testTaxBrackets();
+        testFullMonthlyNetPay();
+        testHighSalaryNetPay();
         System.out.println("==================================\n");
-        */
+        **/
         
         //Initializing Variables for Reader/s:
         String empInfo = "resources/MotorPH_Employee_Information.csv";
         String attendanceInfo = "resources/MotorPH_Attendance_Record.csv";
+        
+        //Attendance File Initialization (Using the New Load Attendance Method 12):
+        java.util.List<String[]> allAttendance = loadAttendance(attendanceInfo);
         
         //Initializing Variables for Employee Information Display:
         String employeeID = "";
@@ -400,206 +567,60 @@ public class MotorPH_Payroll_System_Group61 {
         //If User Logged In Successfully as Payroll Staff:
         } else if ("payroll_staff".equals(userName) && "12345".equals(password)) {
             System.out.println("Payroll Staff Logged In Successfully...");
+
             System.out.println("\n---Welcome Payroll Staff!----");
-            System.out.println("What would you like to do today?");
             System.out.println("1. Process Payroll");
             System.out.println("2. Exit the Program");
             int pStaffMenuOptions = keyboard.nextInt();
             
             switch (pStaffMenuOptions) {
-                case 1 -> { //If Payroll Staff Chooses Option 1:
-                    System.out.println("Proceeding to Process Payroll...");
+                case 1 -> { 
                     System.out.println("\n---Payroll Processing:----");
-                    System.out.println("What would you like to process today?");
                     System.out.println("1. One Employee");
                     System.out.println("2. All Employees");
-                    System.out.println("3. Exit the Program.");
+                    System.out.println("3. Exit");
                     int pStaffSubOptions = keyboard.nextInt(); 
-                    
-                    keyboard.nextLine();
+                    keyboard.nextLine(); // Clear buffer
+
                     switch (pStaffSubOptions) {
-                        case 1 -> { //Process Payroll for 1 Employee ONLY:
-                            System.out.println("Enter Employee Number to Process: ");
-                            String inputEmployeeID = keyboard.nextLine();
-                            findAndDisplayEmpInfo(empInfo, inputEmployeeID);
-                            
-                            double hourlyRate = getHourlyRate(empInfo, inputEmployeeID);
+                        case 1 -> {
+                            System.out.println("Enter Employee Number: ");
+                            String inputID = keyboard.nextLine();
+                            findAndDisplayEmpInfo(empInfo, inputID);
+                            double rate = getHourlyRate(empInfo, inputID);
                                                         
-                            //Calculation for Separating Cutoff1 & 2Hours.
-                            if (hourlyRate > 0){
+                            if (rate > 0) {
                                 for (int m = 6; m <= 12; m++) {
-                                    double cutoff1Hours = 0;
-                                    double cutoff2Hours = 0;
-                                    
-                                    try (BufferedReader reader = new BufferedReader(new FileReader(attendanceInfo))) {
-                                        reader.readLine();
-                                        String line;
-                                        while ((line = reader.readLine()) != null) {
-                                            if(line.trim().isEmpty()) continue;
-                                            String[] data = line.split(",");
-                                            
-                                            if(data[0].equals(inputEmployeeID)) {
-                                                String[] dateParts = data[3].split("/");
-                                                int month = Integer.parseInt(dateParts[0]);
-                                                int day = Integer.parseInt(dateParts[1]);
-                                                
-                                                if (month == m) {
-                                                    double hours = calculateDailyHours(data[4], data[5]);
-                                                    if (day <=15) {
-                                                        cutoff1Hours += hours;
-                                                    } else {
-                                                        cutoff2Hours += hours;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        displayPayrollResults(m, inputEmployeeID, hourlyRate, cutoff1Hours, cutoff2Hours);
-                                    
-                                    } catch (IOException e) {
-                                        System.out.println("Error accessing attendance records for month " + m);
-                                        } 
-                                } 
-                            } else {
-                                return;
-                            }
-                        } case 2 -> { //Process Payroll for ALL Employees:
-                            System.out.println("Processing Payroll for ALL Employees (June - December)...");
-
-                            try (BufferedReader empReader = new BufferedReader(new FileReader(empInfo))) {
-                                empReader.readLine(); 
-                                String empLine;
-
-                                while ((empLine = empReader.readLine()) != null) {
-                                if (empLine.trim().isEmpty()) continue;
-
-                                    //Used Regex to split the data (for simplicity).
-                                    String[] empData = empLine.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                                    
-                                    employeeID = empData[0];
-                                    firstName = empData[2];
-                                    lastName = empData[1];
-                                    birthday = empData[3];
-                                    double hourlyRate = Double.parseDouble(empData[18].replace("\"", "").replace(",", "").trim());
-                                                                        
-                                        //Added this header to match the "One Employee" Payroll Format.
-                                        System.out.println("\n******************************************");
-                                        System.out.println("---Employee Information---");
-                                        System.out.println("Employee #      : " + employeeID);
-                                        System.out.println("Employee Name   : " + lastName + ", " + firstName);
-                                        System.out.println("Birthday        : " + birthday);
-                                        System.out.println("--------------------------");
-
-                                // For each employee, loop through the months
-                                for (int m = 6; m <= 12; m++) {
-                                    double cutoff1Hours = 0;
-                                    double cutoff2Hours = 0;
-
-                                    try (BufferedReader attReader = new BufferedReader(new FileReader(attendanceInfo))) {
-                                        attReader.readLine(); 
-                                        String attLine;
-
-                                        while ((attLine = attReader.readLine()) != null) {
-                                            String[] attData = attLine.split(",");
-
-                                        if (attData[0].equals(employeeID)) {
-                                            String[] dateParts = attData[3].split("/");
-                                            int month = Integer.parseInt(dateParts[0]);
-                                            int day = Integer.parseInt(dateParts[1]);
-
+                                    double h1 = 0, h2 = 0;
+                                    //Looping through the Attendance list instead of opening the file repeatedly.
+                                    for (String[] row : allAttendance) {
+                                        if (row[0].equals(inputID)) {
+                                            String[] date = row[3].split("/");
+                                            int month = Integer.parseInt(date[0]);
+                                            int day = Integer.parseInt(date[1]);
                                             if (month == m) {
-                                                double hours = calculateDailyHours(attData[4], attData[5]);
-                                                if (day <= 15) {
-                                                    cutoff1Hours += hours;
-                                                } else {
-                                                    cutoff2Hours += hours;
-                                                }
+                                                double hours = calculateDailyHours(row[4], row[5]);
+                                                if (day <= 15) h1 += hours; else h2 += hours;
                                             }
                                         }
-                                        }
-                                    // Recalling the Method that Prints Payroll Information:
-                                    displayPayrollResults(m, employeeID, hourlyRate, cutoff1Hours, cutoff2Hours);
-
-                                    } catch (IOException e) {
-                                        System.out.println("Error reading attendance for ID: " + employeeID);
                                     }
+                                    displayPayrollResults(m, inputID, rate, h1, h2);
                                 }
-                                    System.out.println(">>> COMPLETED ALL MONTHS FOR: " + lastName);
-                                    System.out.println("******************************************\n");
-                                }
-                            } catch (IOException e) {
-                                System.out.println("Error reading employee information file.");
                             }
-                        }
-                        case 3 -> {
-                            System.out.println("Exiting the Program. Goodbye!");
-                            keyboard.close();
-                            return; 
-                        }
-                        default ->
-                            System.out.println("Invalid choice, Please Select between 1, 2 and 3 only.");
-                    }
+                        } 
+                        case 2 -> processAllEmployees(empInfo, allAttendance);
+                        case 3 -> System.out.println("Exiting sub-menu...");
+                        default -> System.out.println("Invalid selection.");
+                    } // End of Sub-Switch
                 }   
-                case 2 -> { //If Payroll Staff Chooses Option 2 (Exit Program):
-                    System.out.println("Exiting the Program. Goodbye!");
-                    keyboard.close();
-                    return; 
-                }
-                default -> //If Payroll Staff Inputs a Wrong Choice:
-                    System.out.println("Invalid choice, Please Select between 1 and 2 only.");
-            }
-            
-        } else { //If Credentials Inputted Are Wrong:
+                case 2 -> System.out.println("Goodbye!");
+                default -> System.out.println("Invalid choice, Please Select 1 or 2.");
+            } // End of Main Switch
+
+        } else { // Handle incorrect login
             System.out.println("Incorrect Username/Password, Please Try Again.");
         }    
-    keyboard.close();
-    }       
-    
-    //Unit Testing Methods to Test Specific Logics of My Code:
-    public static void testAttendanceLogic() { //Test Method 1 for Attendance Logic.
-    System.out.println("--- Testing Attendance Logic ---");
-
-        // Test A: Exact 8:00 to 17:00 (8 hours work + 1 hour lunch)
-        double caseA = calculateDailyHours("8:00", "17:00");
-        System.out.println("8:00-17:00: " + (caseA == 8.0 ? "PASS" : "FAIL (Got " + caseA + ")"));
-
-        // Test B: Grace Period (8:09 to 17:00 should still be 8 hours)
-        double caseB = calculateDailyHours("8:09", "17:00");
-        System.out.println("8:09-17:00: " + (caseB == 8.0 ? "PASS" : "FAIL"));
-
-        // Test C: Late (8:11 to 17:00 should be 7.82 hours approx)
-        // (17:00 - 8:11) = 8h 49m = 529 mins. 529 - 60 (lunch) = 469 mins. 469/60 = 7.816
-        double caseC = calculateDailyHours("8:11", "17:00");
-        System.out.println("8:11-17:00: " + (caseC > 7.81 && caseC < 7.82 ? "PASS" : "FAIL"));
-    }
-    public static void testDeductionTables() { //Test Method 2 for Deduction Tables.
-    System.out.println("\n--- Testing Deduction Tables ---");
-
-        double sampleSalary = 25000.00;
-
-        // SSS Test: At 25k, the contribution should be 1125.00
-        double sss = computeSSS(sampleSalary);
-        System.out.println("SSS @ 25k: " + (sss == 1125.0 ? "PASS" : "FAIL (Got " + sss + ")"));
-
-        // PhilHealth Test: 25k * 0.03 / 2 = 375.00
-        double ph = computePhilHealth(sampleSalary);
-        System.out.println("PhilHealth @ 25k: " + (ph == 375.0 ? "PASS" : "FAIL (Got " + ph + ")"));
-
-        // Pag-IBIG Test: Should be capped at 100.00
-        double pi = computePagIbig(sampleSalary);
-        System.out.println("Pag-IBIG @ 25k: " + (pi == 100.0 ? "PASS" : "FAIL"));
-    }
-    
-    public static void testTaxBrackets() { //Test Method 3 for Tax Brackets (IncomeTax)
-        System.out.println("\n--- Testing Tax Brackets ---");
-
-        // Case 1: Low Income (Below 20,832 - should be 0 tax)
-        double tax1 = computeIncomeTax(20000.00);
-        System.out.println("Tax @ 20k Gross: " + (tax1 == 0 ? "PASS" : "FAIL"));
-
-        // Case 2: Middle Income (e.g., 30,000 Gross)
-        // Est. Taxable: 30,000 - ~1600 (statutory) = ~28,400
-        // Tax: (28,400 - 20,833) * 0.20 = ~1,513
-        double tax2 = computeIncomeTax(30000.00);
-        System.out.println("Tax @ 30k Gross: " + (tax2 > 0 ? "PASS (Calculated: " + tax2 + ")" : "FAIL"));
-    }
+        
+        keyboard.close();
+    } // End of Main Method          
 }
