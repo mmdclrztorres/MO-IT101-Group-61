@@ -353,7 +353,6 @@ public class MotorPH_Payroll_System_Group61 {
                 String birthday = data[3];
                 double rate = Double.parseDouble(data[18].replace("\"", "").replace(",", "").trim());
 
-                // --- RESTORED HEADER ---
                 System.out.println("\n******************************************");
                 System.out.println("---Employee Information---");
                 System.out.println("Employee #      : " + id);
@@ -376,7 +375,6 @@ public class MotorPH_Payroll_System_Group61 {
                     displayPayrollResults(m, id, rate, h1, h2);
                 }
 
-                // --- RESTORED FOOTER ---
                 System.out.println(">>> COMPLETED ALL MONTHS FOR: " + lastName);
                 System.out.println("******************************************\n");
             }
