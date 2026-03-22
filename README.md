@@ -42,3 +42,7 @@ To improve readability and maintainability, bulky logic for Processing All Emplo
 ---
 
 **Updated Project Plan File:** https://docs.google.com/spreadsheets/d/1fPTG4bzm688KDI2mqLmHbmYak2F_Fi-pk1GwUM_Muq8/edit?usp=drive_link
+
+**QA Testing File:** https://docs.google.com/spreadsheets/d/1kJ-6WRA5WWhjoQ0XouC17Q__yyPAQu0n6mKgrJ6BxH0/edit?usp=sharing
+
+Tested by: Group 39 - Marjury Seroje
